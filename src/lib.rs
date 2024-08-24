@@ -12,8 +12,8 @@ type HmacSha512 = Hmac<Sha512>;
 mod hotp;
 mod totp;
 
-pub use totp::Totp;
 pub use hotp::Hotp;
+pub use totp::Totp;
 
 /// GenerationError enumerates all possible errors returned by this library.
 #[derive(Error, Debug)]
@@ -151,11 +151,7 @@ pub fn get_otp_auth_url() {}
 /// 3.  Same as (2.) but taking the bits from (offset + 2)
 /// 4.  Same as (2.) but taking the bits from (offset + 3)
 /// 5.  OR'ing each of these u32 so that we collapse all of the set bits into one u32
-#[doc(hidden)]
-fn generate_otp(
-    digits: u32,
-    digest_hash: Vec<u8>,
-) -> std::result::Result<String, GenerationError> {
+fn generate_otp(digits: u32, digest_hash: Vec<u8>) -> std::result::Result<String, GenerationError> {
     let offset = if let Some(o) = digest_hash.last() {
         o & 0xf
     } else {
@@ -196,7 +192,6 @@ fn generate_otp(
     }
 }
 
-#[doc(hidden)]
 fn verify_delta(
     token: String,
     counter: u128,
@@ -219,14 +214,12 @@ fn verify_delta(
     Ok(false)
 }
 
-#[doc(hidden)]
 fn generate_secret_default(length: Option<u32>, symbols: Option<bool>) -> String {
     let defined_symbols = if let Some(s) = symbols { s } else { true };
     let defined_length = if let Some(l) = length { l } else { 32 };
     generate_secret_ascii(defined_length, defined_symbols)
 }
 
-#[doc(hidden)]
 fn get_hmac(
     secret: String,
     algorithm: Algorithm,
@@ -238,7 +231,6 @@ fn get_hmac(
     })
 }
 
-#[doc(hidden)]
 fn generate_secret_ascii(length: u32, symbols: bool) -> String {
     let byte_array: Vec<u8> = (0..length).map(|_| rand::random::<u8>()).collect();
 
@@ -258,13 +250,13 @@ fn generate_secret_ascii(length: u32, symbols: bool) -> String {
     secret
 }
 
-#[doc(hidden)]
 fn encode_uri_component(string: String) -> String {
     byte_serialize(string.as_bytes()).collect()
 }
 
-#[doc(hidden)]
-fn generate_otpauth_url() {}
+fn generate_otpauth_url() {
+    todo!()
+}
 
 #[cfg(test)]
 mod digest_tests {
