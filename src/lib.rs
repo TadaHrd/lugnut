@@ -1,5 +1,4 @@
 use hmac::{crypto_mac, Hmac, Mac, NewMac};
-use rand;
 use sha1::Sha1;
 use sha2::{Sha256, Sha512};
 use thiserror::Error;
@@ -73,7 +72,7 @@ pub fn digest(
     let mut tmp = counter;
     for i in 0..8 {
         buf[7 - i] = (tmp & 0xff) as u8;
-        tmp = tmp >> 8;
+        tmp >>= 8;
     }
 
     // Unwrap enum and apply the hmac alg
@@ -145,9 +144,9 @@ pub fn get_otp_auth_url() {}
 
 /// This section works to fill up the unsigned 32 bit number by:
 /// 1.  Taking the 8 bits at the offset from the digest, AND'ing with 0x7f so that we can ignore the sign bit
-/// and then bit shifting 24 to the left to fill the most significant bits.
+///     and then bit shifting 24 to the left to fill the most significant bits.
 /// 2.  Taking the next 8 bits from the digest at (offset + 1), AND'ing with 0xff to get the set bits, shifting 16 to fill
-/// the next 8 significant bits.
+///     the next 8 significant bits.
 /// 3.  Same as (2.) but taking the bits from (offset + 2)
 /// 4.  Same as (2.) but taking the bits from (offset + 3)
 /// 5.  OR'ing each of these u32 so that we collapse all of the set bits into one u32
@@ -159,22 +158,22 @@ fn generate_otp(digits: u32, digest_hash: Vec<u8>) -> std::result::Result<String
     };
 
     let no_offset = if let Some(o) = digest_hash.get(offset as usize) {
-        u32::from(o.clone() & 0x7f) << 24
+        u32::from(o & 0x7f) << 24
     } else {
         0
     };
     let one_offset = if let Some(o) = digest_hash.get((offset + 1) as usize) {
-        u32::from(o.clone() & 0xff) << 16
+        u32::from(*o) << 16
     } else {
         0
     };
     let two_offset = if let Some(o) = digest_hash.get((offset + 2) as usize) {
-        u32::from(o.clone() & 0xff) << 8
+        u32::from(*o) << 8
     } else {
         0
     };
     let three_offset = if let Some(o) = digest_hash.get((offset + 3) as usize) {
-        u32::from(o.clone() & 0xff)
+        u32::from(*o)
     } else {
         0
     };
@@ -185,10 +184,7 @@ fn generate_otp(digits: u32, digest_hash: Vec<u8>) -> std::result::Result<String
         Err(GenerationError::FailedToGenerateOTP())
     } else {
         let padded_string = format!("{:0>width$}", code.to_string(), width = digits as usize);
-        Ok(
-            (&padded_string[(padded_string.len() - digits as usize)..padded_string.len()])
-                .to_string(),
-        )
+        Ok(padded_string[(padded_string.len() - digits as usize)..padded_string.len()].to_string())
     }
 }
 
@@ -235,16 +231,16 @@ fn generate_secret_ascii(length: u32, symbols: bool) -> String {
     let byte_array: Vec<u8> = (0..length).map(|_| rand::random::<u8>()).collect();
 
     let mut secret: String = String::from("");
-    for (_, value) in byte_array.iter().enumerate() {
+    for value in byte_array.iter() {
         // Need to decide to grab from the symbol/char set if configuration wants to add symbols to secret
         if symbols {
             secret.push(match value % 2 {
-                0 => CHAR_SET[((usize::from(value / 1)) * (CHAR_SET.len() - 1)) / 255],
-                1 => SYMBOL_SET[((usize::from(value / 1)) * (SYMBOL_SET.len() - 1)) / 255],
+                0 => CHAR_SET[((usize::from(*value)) * (CHAR_SET.len() - 1)) / 255],
+                1 => SYMBOL_SET[((usize::from(*value)) * (SYMBOL_SET.len() - 1)) / 255],
                 _ => unreachable!("Error: Reached the unreachable match arm of `u8` modulo 2"),
             })
         } else {
-            secret.push(CHAR_SET[((usize::from(value / 1)) * (CHAR_SET.len() - 1)) / 255])
+            secret.push(CHAR_SET[((usize::from(*value)) * (CHAR_SET.len() - 1)) / 255])
         }
     }
     secret
@@ -289,7 +285,7 @@ mod generate_secret_tests {
     fn test_generate_secret_ascii_symbols() {
         let secret = generate_secret_ascii(2000, true);
         assert_eq!(secret.len(), 2000);
-        assert_eq!(secret.contains("!"), true);
+        assert!(secret.contains("!"));
     }
 
     //    #[test]
@@ -313,14 +309,8 @@ mod generate_secret_tests {
 
     #[test]
     fn test_generate_secret_non_default_symbols() {
-        assert_eq!(
-            generate_secret_without_symbols()
-                .chars()
-                .any(|c| match SYMBOL_SET.binary_search(&c) {
-                    Ok(_) => true,
-                    _ => false,
-                }),
-            false
-        )
+        assert!(generate_secret_without_symbols()
+            .chars()
+            .any(|c| { SYMBOL_SET.binary_search(&c).is_ok() }))
     }
 }
