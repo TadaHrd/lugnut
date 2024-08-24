@@ -13,20 +13,20 @@ impl Hotp {
             digest: Vec::new(),
         }
     }
-    pub fn with_length<'a>(&'a mut self, n: u32) -> &'a mut Hotp {
+    pub fn with_length(&mut self, n: u32) -> &mut Hotp {
         self.digits = n;
         self
     }
-    pub fn with_digest<'a>(&'a mut self, digest: Vec<u8>) -> &'a mut Hotp {
+    pub fn with_digest(&mut self, digest: Vec<u8>) -> &mut Hotp {
         self.digest = digest;
         self
     }
-    pub fn with_window<'a>(&'a mut self, window: u64) -> &'a mut Hotp {
+    pub fn with_window(&mut self, window: u64) -> &mut Hotp {
         self.window = window;
         self
     }
-    pub fn generate<'a>(
-        &'a self,
+    pub fn generate(
+        &self,
         key: String,
         counter: u128,
     ) -> std::result::Result<String, GenerationError> {
@@ -37,8 +37,8 @@ impl Hotp {
         };
         generate_otp(self.digits, hash)
     }
-    pub fn verify<'a>(
-        &'a self,
+    pub fn verify(
+        &self,
         token: String,
         key: String,
         counter: u128,
@@ -108,7 +108,7 @@ mod tests_verify {
         } else {
             false
         };
-        assert_eq!(true, verified);
+        assert!(verified);
     }
 }
 
@@ -162,7 +162,7 @@ mod test_builder_pattern {
             } else {
                 false
             };
-        assert_eq!(true, result_correct);
-        assert_eq!(false, result_fail);
+        assert!(result_correct);
+        assert!(!result_fail);
     }
 }

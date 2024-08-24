@@ -47,7 +47,7 @@ impl Totp {
     /// let mut totp_builder = Totp::new();
     /// totp_builder.with_epoch_time_offset(500);
     /// ```
-    pub fn with_epoch_time_offset<'a>(&'a mut self, offset: u64) -> &'a mut Totp {
+    pub fn with_epoch_time_offset(&mut self, offset: u64) -> &mut Totp {
         self.epoch_time_offset = offset;
         self
     }
@@ -68,7 +68,7 @@ impl Totp {
     /// let mut totp_builder = Totp::new();
     /// totp_builder.with_window(5);
     /// ```
-    pub fn with_window<'a>(&'a mut self, window: u64) -> &'a mut Totp {
+    pub fn with_window(&mut self, window: u64) -> &mut Totp {
         self.window = window;
         self
     }
@@ -86,7 +86,7 @@ impl Totp {
     /// let mut totp_builder = Totp::new();
     /// totp_builder.with_digest(vec![1, 2, 3, 4]);
     /// ```
-    pub fn with_digest<'a>(&'a mut self, digest: Vec<u8>) -> &'a mut Totp {
+    pub fn with_digest(&mut self, digest: Vec<u8>) -> &mut Totp {
         self.digest = digest;
         self
     }
@@ -101,7 +101,7 @@ impl Totp {
     /// let mut totp_builder = Totp::new();
     /// let code = totp_builder.generate(key);
     /// ```
-    pub fn generate<'a>(&'a self, key: String) -> std::result::Result<String, GenerationError> {
+    pub fn generate(&self, key: String) -> std::result::Result<String, GenerationError> {
         let counter = self.get_counter() as u128;
         let hash = if self.digest.is_empty() {
             digest(key.clone(), counter, Algorithm::Sha1)?
@@ -121,11 +121,7 @@ impl Totp {
     /// let mut totp_builder = Totp::new();
     /// let verified = totp_builder.verify("1234".to_string(), key);
     /// ```
-    pub fn verify<'a>(
-        &'a self,
-        token: String,
-        key: String,
-    ) -> std::result::Result<bool, GenerationError> {
+    pub fn verify(&self, token: String, key: String) -> std::result::Result<bool, GenerationError> {
         let counter = self.get_counter();
         let windowed_counter = (counter - self.window) as u128;
         let hash = if self.digest.is_empty() {
@@ -133,17 +129,11 @@ impl Totp {
         } else {
             self.digest.clone()
         };
-        verify_delta(
-            token,
-            windowed_counter,
-            6,
-            self.window + self.window,
-            hash,
-        )
+        verify_delta(token, windowed_counter, 6, self.window + self.window, hash)
     }
 
     #[doc(hidden)]
-    fn get_counter<'a>(&'a self) -> u64 {
+    fn get_counter(&self) -> u64 {
         let end = if self.time == 0 {
             SystemTime::now()
         } else {
